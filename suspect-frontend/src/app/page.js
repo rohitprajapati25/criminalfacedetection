@@ -207,7 +207,7 @@ export default function Home() {
                             style={{
                                 width: '100%',
                                 height: '100%',
-                                objectFit: '',
+                                objectFit: 'cover',
                                 borderRadius: '0.5rem'
                             }}
                             onError={(e) => {
@@ -215,11 +215,6 @@ export default function Home() {
                                 console.error("Stream failed to load");
                             }}
                         />
-
-                        {/* 
-                           Webcam component removed to prevent camera locking conflict with backend.
-                           The backend now handles the camera and streams the feed with overlays.
-                        */}
 
                         {loading && (
                             <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }}>
@@ -254,13 +249,6 @@ export default function Home() {
                             <Clock size={20} /> {isAuto ? "STOP AUTO" : "AUTO SCAN"}
                         </button>
                     </div>
-
-                    <style jsx>{`
-            @keyframes scan {
-              0% { top: 0%; }
-              100% { top: 100%; }
-            }
-          `}</style>
                 </section>
 
                 {/* Right: Info Panels */}

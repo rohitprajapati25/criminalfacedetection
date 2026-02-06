@@ -130,21 +130,12 @@ export default function PublicDetect() {
                         <img src={preview} alt="Preview" style={{ width: '100%', height: 'auto', display: 'block' }} />
                         {loading && (
                             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(4px)' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                    <Search size={48} className="animate-pulse" color="#06B6D4" />
+                                <div className="animate-pulse-custom" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                    <Search size={48} color="#06B6D4" />
                                     <span style={{ fontSize: '1rem', fontWeight: '700', letterSpacing: '2px' }}>ANALYZING...</span>
                                 </div>
                             </div>
                         )}
-                        <style jsx>{`
-                            @keyframes pulse {
-                                0%, 100% { opacity: 1; transform: scale(1); }
-                                50% { opacity: 0.5; transform: scale(1.1); }
-                            }
-                            .animate-pulse {
-                                animation: pulse 1.5s ease-in-out infinite;
-                            }
-                        `}</style>
                     </div>
                 )}
 
@@ -162,7 +153,7 @@ export default function PublicDetect() {
 
                 {/* Results Section */}
                 {result && (
-                    <div style={{
+                    <div className="fade-in" style={{
                         padding: '1.5rem',
                         borderRadius: '1rem',
                         textAlign: 'center',
@@ -172,7 +163,6 @@ export default function PublicDetect() {
                         gap: '1rem',
                         background: result.alert === 'RED ALERT' ? 'rgba(239, 68, 68, 0.15)' : result.alert === 'SAFE' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
                         border: `1px solid ${result.alert === 'RED ALERT' ? '#EF444455' : result.alert === 'SAFE' ? '#22C55E55' : '#FFFFFF22'}`,
-                        animation: 'fadeIn 0.5s ease'
                     }}>
                         {result.alert === 'RED ALERT' ? (
                             <>
@@ -203,13 +193,6 @@ export default function PublicDetect() {
                         </button>
                     </div>
                 )}
-
-                <style jsx>{`
-                    @keyframes fadeIn {
-                        from { opacity: 0; transform: translateY(10px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
-                `}</style>
             </div>
 
             <footer style={{ marginTop: 'auto', padding: '2rem', textAlign: 'center' }}>
