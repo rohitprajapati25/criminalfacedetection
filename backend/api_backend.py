@@ -236,7 +236,7 @@ api = FastAPI(lifespan=lifespan)
 
 api.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*", "https://criminalfacedetection.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
