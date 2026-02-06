@@ -14,9 +14,9 @@ import shutil
 # CONFIGURATION
 # ===============================
 SIM_THRESHOLD = 0.5
-CONFIRM_FRAMES = 5
-MIN_FACE_SIZE = 120
-ALERT_COOLDOWN = 15
+CONFIRM_FRAMES = 3
+MIN_FACE_SIZE = 60
+ALERT_COOLDOWN = 10
 CAMERA_ID = 0
 
 # ===============================
@@ -167,8 +167,10 @@ def ai_thread():
             
         with lock:
             detection_results = new_results
+            if len(new_results) > 0:
+                print(f"👁️ AI Update: {len(new_results)} faces tracked.")
         
-        # Small sleep to prevent CPU hogging if AI is too fast (unlikely)
+        # Small sleep
         time.sleep(0.01)
 
 # ===============================
@@ -286,6 +288,57 @@ async def check_status():
             return {"alert": "RED ALERT", "message": label}
     
     return {"alert": "SAFE", "message": "Authorised visitor detected"}
+
+@api.post("/detect")
+async def detect_face(file: UploadFile = File(...)):
+    """Detects if a face in the uploaded image belongs to a suspect."""
+    try:
+        # Save temp file with unique name
+        unique_id = int(time.time() * 1000)
+        temp_path = f"temp_detect_{unique_id}_{file.filename}"
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        img = cv2.imread(temp_path)
+        os.remove(temp_path) # Clean up
+        
+        if img is None:
+            return {"status": "error", "message": "Failed to read image."}
+            
+        faces = app_insight.get(img)
+        if not faces:
+            return {"alert": "NO_FACE", "message": "No face detected in the image."}
+            
+        # Get largest face
+        faces = sorted(faces, key=lambda x: (x.bbox[2]-x.bbox[0]) * (x.bbox[3]-x.bbox[1]), reverse=True)
+        face = faces[0]
+        emb = face.embedding
+        
+        name_match = None
+        max_sim = 0
+        
+        # Compare with DB
+        with lock:
+            for name, db_emb in suspect_db.items():
+                sim = np.dot(emb, db_emb) / (np.linalg.norm(emb) * np.linalg.norm(db_emb))
+                if sim > max_sim:
+                    max_sim = sim
+                    name_match = os.path.splitext(name)[0]
+        
+        if max_sim > SIM_THRESHOLD and name_match:
+            # Try to extract the first part of name if it's name_filename
+            clean_name = name_match.split('_')[0] if '_' in name_match else name_match
+            return {
+                "alert": "RED ALERT", 
+                "message": f"SUSPECT: {clean_name}", 
+                "confidence": float(max_sim)
+            }
+        
+        return {"alert": "SAFE", "message": "Authorised visitor detected"}
+        
+    except Exception as e:
+        print(f"❌ Error in /detect: {e}")
+        return {"status": "error", "message": str(e)}
 
 @api.get("/suspects")
 async def get_suspects():

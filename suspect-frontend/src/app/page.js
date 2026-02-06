@@ -20,6 +20,17 @@ import {
     QrCode
 } from "lucide-react";
 
+const getBackendUrl = () => {
+    if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+        return process.env.NEXT_PUBLIC_BACKEND_URL;
+    }
+    // Fallback to the latest known tunnel URL for immediate connectivity
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+        return `https://popular-criticism-lions-appliances.trycloudflare.com`;
+    }
+    return "http://localhost:8000";
+};
+
 export default function Home() {
     const webcamRef = useRef(null);
     const [result, setResult] = useState("");
@@ -32,6 +43,12 @@ export default function Home() {
     const [uploadFile, setUploadFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState("");
     const [suspects, setSuspects] = useState([]);
+    const [mounted, setMounted] = useState(false);
+
+    // Initial mount
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Update time
     useEffect(() => {
@@ -43,12 +60,12 @@ export default function Home() {
 
     const fetchSuspects = useCallback(async () => {
         try {
-            const res = await axios.get("http://localhost:8000/suspects");
+            const res = await axios.get(`${getBackendUrl()}/suspects`);
             setSuspects(res.data.suspects || []);
         } catch (err) {
             console.error("Fetch suspects failed", err);
         }
-    }, []);
+    }, [getBackendUrl]);
 
     useEffect(() => {
         fetchSuspects();
@@ -59,7 +76,7 @@ export default function Home() {
     const deleteSuspect = async (name) => {
         if (!confirm(`Are you sure you want to remove ${name}?`)) return;
         try {
-            await axios.delete(`http://localhost:8000/suspects/${name}`);
+            await axios.delete(`${getBackendUrl()}/suspects/${name}`);
             addLog(`Suspect removed: ${name}`, "secondary");
             fetchSuspects();
         } catch (err) {
@@ -86,7 +103,7 @@ export default function Home() {
             const formData = new FormData();
             formData.append("file", uploadFile);
 
-            const res = await axios.post(`http://localhost:8000/upload?name=${encodeURIComponent(uploadName)}`, formData);
+            const res = await axios.post(`${getBackendUrl()}/upload?name=${encodeURIComponent(uploadName)}`, formData);
 
             if (res.data.status === "success") {
                 setUploadStatus("Success! Suspect added.");
@@ -108,7 +125,7 @@ export default function Home() {
     const capture = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await axios.get("http://localhost:8000/check");
+            const res = await axios.get(`${getBackendUrl()}/check`);
             const status = res.data.alert;
 
             setResult(status);
@@ -151,8 +168,8 @@ export default function Home() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <Shield color="var(--accent-cyan)" size={32} />
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>AI SURVEILLANCE</h1>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>PREMIUM THREAT DETECTION SYSTEM</p>
+                        <h1 style={{ fontSize: '4rem', fontWeight: '500' }}>AI CRIMINAL DETECTOR</h1>
+                        <p style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>PREMIUM THREAT DETECTION SYSTEM</p>
                     </div>
                 </div>
 
@@ -185,12 +202,12 @@ export default function Home() {
                     <div className={`video-wrapper ${loading ? 'detecting' : ''} ${result === "RED ALERT" ? 'red-alert' : ''}`}>
                         {/* Backend MJPEG Stream */}
                         <img
-                            src="http://localhost:8000/video"
+                            src={`${getBackendUrl()}/video`}
                             alt="Live Surveillance Feed"
                             style={{
                                 width: '100%',
                                 height: '100%',
-                                objectFit: 'cover',
+                                objectFit: '',
                                 borderRadius: '0.5rem'
                             }}
                             onError={(e) => {
@@ -387,24 +404,33 @@ export default function Home() {
                     <div className="card" style={{ textAlign: 'center' }}>
                         <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', justifyContent: 'center' }}>
                             <QrCode size={18} color="var(--accent-cyan)" />
-                            Mobile Registration
+                            Public Scanner Access
                         </h3>
                         <div style={{
                             background: 'white',
                             padding: '1rem',
                             borderRadius: '0.75rem',
                             display: 'inline-block',
-                            marginBottom: '0.75rem'
+                            marginBottom: '0.75rem',
+                            minHeight: '152px', // Match the height of the QR code + padding
+                            minWidth: '152px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                         }}>
-                            <QRCodeSVG
-                                value={`http://10.169.182.245:3000/upload`}
-                                size={120}
-                                level="H"
-                                includeMargin={false}
-                            />
+                            {mounted ? (
+                                <QRCodeSVG
+                                    value={`${window.location.origin}/public-detect`}
+                                    size={120}
+                                    level="H"
+                                    includeMargin={false}
+                                />
+                            ) : (
+                                <div style={{ width: 120, height: 120, background: '#f0f0f0', borderRadius: '4px' }}></div>
+                            )}
                         </div>
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                            Scan to register suspect from phone
+                            Scan to check a person via mobile
                         </p>
                     </div>
 
