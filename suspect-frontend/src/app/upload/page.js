@@ -4,11 +4,28 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Camera, Shield, User, CheckCircle, AlertCircle } from "lucide-react";
 
+const getBackendUrl = () => {
+    if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+        return process.env.NEXT_PUBLIC_BACKEND_URL;
+    }
+    // Fallback to the latest known tunnel URL for immediate connectivity
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+        return `https://trusted-emerging-invoice-parish.trycloudflare.com`;
+    }
+    return "http://localhost:8000";
+};
+
 export default function MobileUpload() {
     const [name, setName] = useState("");
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: "", type: "" });
+    const [mounted, setMounted] = useState(false);
+
+    // Initial mount
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleUpload = async (e) => {
         e.preventDefault();
@@ -24,11 +41,7 @@ export default function MobileUpload() {
             const formData = new FormData();
             formData.append("file", file);
 
-            // Adjust this IP to your machine's local IP if needed, 
-            // but localhost:8000 might not work if accessed via phone IP.
-            // Using a dynamic approach or hardcoded local IP for this demo.
-            const backendIp = window.location.hostname; // Should be the local IP of the server
-            const res = await axios.post(`http://${backendIp}:8000/upload?name=${encodeURIComponent(name)}`, formData);
+            const res = await axios.post(`${getBackendUrl()}/upload?name=${encodeURIComponent(name)}`, formData);
 
             if (res.data.status === "success") {
                 setMessage({ text: `Suspect ${name} registered successfully!`, type: "success" });
